@@ -7,7 +7,7 @@ see this [relevant C++ proposal](https://www.open-std.org/jtc1/sc22/wg21/docs/pa
 Tools like `pahole` and clang's [static analyzer](https://clang.llvm.org/docs/analyzer/checkers.html#optin-performance-padding) are nice, but:
 
 - `pahole` does not seem to correctly layout struct members that are overly aligned
-- clang's static analyzer has a decent heuristic for laying out overly aligned members, but there are counterexamples where the heuristic doesn't work.
+- clang's static analyzer has a [decent heuristic](https://github.com/llvm/llvm-project/blob/dec47b76f406242dfb9d36da4d7adfb171c71104/clang/lib/StaticAnalyzer/Checkers/PaddingChecker.cpp#L232) for laying out overly aligned members, but there are counterexamples where the heuristic doesn't work.
 
 This web application will find all optimal layouts for a C structure by brute force, in hopes that enough varied examples can give hints into how one can
 create a better algorithm for the task.
