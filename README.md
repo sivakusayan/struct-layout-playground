@@ -10,4 +10,4 @@ Tools like `pahole` and clang's [static analyzer](https://clang.llvm.org/docs/an
 - clang's static analyzer has a decent heuristic for laying out overly aligned members, but there are counterexamples where the heuristic doesn't work.
 
 This web application will find all optimal layouts for a C structure by brute force, in hopes that enough varied examples can give hints into how one can
-create a better algorithm for the task that we can mathematically prove.
+create a better algorithm for the task.
