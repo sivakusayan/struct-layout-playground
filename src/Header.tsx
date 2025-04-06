@@ -1,5 +1,5 @@
-import { PropsWithChildren } from "react";
-import { NavLink } from "react-router";
+import { PropsWithChildren } from 'react'
+import { NavLink } from 'react-router'
 
 export default () => (
     <header>
@@ -9,14 +9,14 @@ export default () => (
             <NavigationLink to="/about">About</NavigationLink>
         </nav>
     </header>
-);
+)
 
 /*TODO: Style active links differently*/
 const NavigationLink = ({
     to,
     children,
 }: PropsWithChildren<{ to: string }>) => (
-    <NavLink to={to} className={({ isActive }) => (isActive ? "active" : "")}>
+    <NavLink to={to} className={({ isActive }) => (isActive ? 'active' : '')}>
         {children}
     </NavLink>
-);
+)
