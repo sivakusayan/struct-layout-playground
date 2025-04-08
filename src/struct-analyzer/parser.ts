@@ -1,13 +1,19 @@
 type Type = PrimitiveType | PointerType | ArrayType | StructureType;
-const enum TypeKind {
+export const enum TypeKind {
     PRIMITIVE,
     POINTER,
     ARRAY,
     STRUCTURE,
 }
-type PrimitiveType = {
+
+const isValidPrimitive = (primitive: string) => {
+    const validPrimitives = ['char', 'short', 'int', 'double'];
+    return validPrimitives.includes(primitive);
+};
+
+export type PrimitiveType = {
     kind: TypeKind.PRIMITIVE;
-    typeId: number;
+    type: string;
 };
 type PointerType = {
     kind: TypeKind.POINTER;
@@ -25,7 +31,7 @@ type StructureType = {
 type StructureMember = {
     name: string;
     type: Type;
-    alignmentOverride: number | null;
+    alignmentOverride?: number;
 };
 export type Structure = {
     name: string | null;
@@ -45,7 +51,7 @@ export type ParseError = {
     errorMessage: string;
     lineNumber?: number;
 };
-type ParseResult = {
+export type ParseResult = {
     structureToAnalyze: string;
     structures: Structure[];
 };
@@ -56,7 +62,7 @@ export const isParseError = (object: any): object is ParseError => {
 };
 
 export const parse = (code: string): ParseResult | ParseError => {
-    const lines = code.split('\n');
+    const lines = code.split('\n').map((line) => line.trim());
     let currentLineNumber = 0;
     const structures = [];
     const structuresMarkedForAnalysis = [];
@@ -80,12 +86,12 @@ export const parse = (code: string): ParseResult | ParseError => {
         };
     }
 
-    if (structuresMarkedForAnalysis.length === 0) {
-        return {
-            error: ParseErrorCode.ERROR_NO_STRUCTURES_TO_ANALYZE,
-            errorMessage: 'At least one structure must be marked for analysis.',
-        };
-    }
+    //    if (structuresMarkedForAnalysis.length === 0) {
+    //        return {
+    //            error: ParseErrorCode.ERROR_NO_STRUCTURES_TO_ANALYZE,
+    //            errorMessage: 'At least one structure must be marked for analysis.',
+    //        };
+    //    }
 
     if (structuresMarkedForAnalysis.length > 1) {
         return {
@@ -94,15 +100,15 @@ export const parse = (code: string): ParseResult | ParseError => {
         };
     }
 
-    if (!structuresMarkedForAnalysis[0].name) {
-        return {
-            error: ParseErrorCode.ERROR_ANONYMOUS_STRUCTURE_MARKED_FOR_ANALYSIS,
-            errorMessage: 'Only named structures can be marked for analysis.',
-        };
-    }
+    //    if (!structuresMarkedForAnalysis[0].name) {
+    //        return {
+    //            error: ParseErrorCode.ERROR_ANONYMOUS_STRUCTURE_MARKED_FOR_ANALYSIS,
+    //            errorMessage: 'Only named structures can be marked for analysis.',
+    //        };
+    //    }
 
     return {
-        structureToAnalyze: structuresMarkedForAnalysis[0].name,
+        structureToAnalyze: '',
         structures,
     };
 };
@@ -125,13 +131,65 @@ const getNextStructure = (
     }
     if (structStartIndex === -1) return null;
 
-    let parsedStructLine = lines[structStartIndex]
-        .split(' ')
-        .map((token) => token.trim());
-    let structName;
-    if (parsedStructLine[1] !== '{') {
-        structName = parsedStructLine[1];
+    const { tokens, tokenLineNumber } = tokenizeUntilClosingBracket(
+        lines,
+        structStartIndex
+    );
+    if (!tokens) {
+        return {
+            error: ParseErrorCode.ERROR_SYNTAX,
+            errorMessage: 'Structure encountered with no closing bracket.',
+            lineNumber: structStartIndex + 1,
+        };
     }
 
-    return null;
+    let i = 2;
+    const structure: Structure = {
+        name: null,
+        members: [],
+    };
+    if (tokens[1] !== '{') {
+        structure.name = tokens[1];
+        i++;
+    }
+    for (; i < tokens.length - 1; ) {
+        const type = tokens[i];
+        if (!isValidPrimitive(type)) {
+            return {
+                error: ParseErrorCode.ERROR_SYNTAX,
+                errorMessage: 'Invalid Type in Structure',
+                lineNumber: structStartIndex,
+            };
+        }
+        const name = tokens[i + 1].replace(';', '');
+        structure.members.push({
+            name,
+            type: { kind: TypeKind.PRIMITIVE, type: type },
+        });
+        i += 2;
+    }
+
+    return {
+        structure,
+        shouldAnalyzeStructure: false,
+        nextLine: tokenLineNumber + 1,
+    };
+};
+
+const tokenizeUntilClosingBracket = (lines: string[], startingLine: number) => {
+    const tokens: string[] = [];
+    const currentLine = startingLine;
+    for (let i = startingLine; i < lines.length; i++) {
+        const lineTokens = lines[i].split(' ').map((token) => token.trim());
+        tokens.push(...lineTokens);
+        if (lineTokens[lineTokens.length - 1] === '}') {
+            return {
+                tokens,
+                tokenLineNumber: currentLine,
+            };
+        }
+    }
+    return {
+        tokens: null,
+    };
 };
